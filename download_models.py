@@ -1,7 +1,7 @@
 import os
 import requests
 import sys
-
+import logging
 BASE_URL = "https://dl.fbaipublicfiles.com/segment_anything_2/072824/"
 sam2_hiera_t_url = f"{BASE_URL}sam2_hiera_tiny.pt"
 sam2_hiera_s_url = f"{BASE_URL}sam2_hiera_small.pt"
@@ -16,6 +16,7 @@ def download_file(url, filename):
         with open(filename, 'wb') as file:
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
+                logging.info(f"Downloaded {filename}")
         print(f"Successfully downloaded: {filename}")
     except requests.exceptions.RequestException as e:
         print(f"Failed to download from {url}: {e}")
@@ -26,6 +27,9 @@ def main():
     os.chdir('checkpoints')
 
     download_file(sam2_hiera_l_url, os.path.basename(sam2_hiera_l_url))
+    download_file(sam2_hiera_s_url, os.path.basename(sam2_hiera_s_url))
+    download_file(sam2_hiera_t_url, os.path.basename(sam2_hiera_t_url))
+    download_file(sam2_hiera_b_plus_url, os.path.basename(sam2_hiera_b_plus_url))
     download_file(groundingdino_url, os.path.basename(groundingdino_url))
 
     os.chdir('..')
