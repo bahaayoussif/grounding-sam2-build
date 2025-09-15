@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO, format="2025-09-15 %(asctime)s - %(level
 
 CURRENTLY_POSITIVE = True
 
+
 def pick_device():
     """Pick a safe device: CUDA if available, else MPS on Apple Silicon, else CPU."""
     if torch.cuda.is_available():
@@ -19,6 +20,7 @@ def pick_device():
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         return "mps"
     return "cpu"
+
 
 def _ensure_boxes_dict(pred_dict):
     """Normalize pred_dict into a dict with 'boxes' key (possibly empty)."""
@@ -41,6 +43,7 @@ def _ensure_boxes_dict(pred_dict):
         norm[k] = v
     return norm
 
+
 def get_select_index(evt: gr.SelectData, image, point_label_state):
     global CURRENTLY_POSITIVE
     # Work on a copy to avoid mutating Gradio's reference
@@ -56,6 +59,7 @@ def get_select_index(evt: gr.SelectData, image, point_label_state):
     point_label_state["points"].append((x, y))
     point_label_state["labels"].append(1 if CURRENTLY_POSITIVE else 0)
     return canvas, point_label_state
+
 
 def box_segment(image, text_prompt, box_threshold, text_threshold):
     """
@@ -86,7 +90,7 @@ def box_segment(image, text_prompt, box_threshold, text_threshold):
             image,
             box_threshold,
             text_threshold,
-            device=device,   # <<< pass device
+            device=device,  # <<< pass device
         )
         pred_dict = _ensure_boxes_dict(pred_dict)
         n_boxes = len(pred_dict["boxes"])
@@ -96,15 +100,17 @@ def box_segment(image, text_prompt, box_threshold, text_threshold):
         logging.exception("ground_image failed.")
         return image, {"boxes": np.zeros((0, 4), dtype=float)}
 
+
 def create_mask_and_cutout(image, mask, color=(255, 255, 255)):
     h, w = mask.shape[-2:]
     mask_image = Image.fromarray(np.uint8(mask.reshape(h, w, 1) * np.array(color).reshape(1, 1, -1)))
-    mask_gray = Image.fromarray(np.uint8(mask.reshape(h, w) * 255), mode='L')
+    mask_gray = Image.fromarray(np.uint8(mask.reshape(h, w) * 255)).convert("L")
 
     base_np = np.array(image)
     base_np[mask.reshape(h, w) == 0] = 0
     masked_cutout = Image.fromarray(base_np)
     return mask_gray, masked_cutout
+
 
 def segment(image, pred_dict, point_label_state):
     """
@@ -155,12 +161,15 @@ def segment(image, pred_dict, point_label_state):
         logging.exception("Segmentation pipeline failed.")
         return []
 
+
 def passthrough(image):
     return image, {"points": [], "labels": []}
+
 
 def toggle_current_pos():
     global CURRENTLY_POSITIVE
     CURRENTLY_POSITIVE = not CURRENTLY_POSITIVE
+
 
 with gr.Blocks() as demo:
     with gr.Column():
